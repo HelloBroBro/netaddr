@@ -12,11 +12,6 @@ as bare MACs containing no delimiters.
 import struct as _struct
 import re as _re
 
-#   Check whether we need to use fallback code or not.
-try:
-    from socket import AF_LINK
-except ImportError:
-    AF_LINK = 48
 
 from netaddr.core import AddrFormatError
 from netaddr.strategy import (
@@ -33,12 +28,6 @@ from netaddr.strategy import (
 
 #: The width (in bits) of this address type.
 width = 48
-
-#: The AF_* constant value of this address type.
-family = AF_LINK
-
-#: A friendly string name address type.
-family_name = 'MAC'
 
 #: The version of this address type.
 version = 48
@@ -124,24 +113,26 @@ DEFAULT_DIALECT = mac_eui48
 
 # -----------------------------------------------------------------------------
 #: Regular expressions to match all supported MAC address formats.
-RE_MAC_FORMATS = (
-    #   2 bytes x 6 (UNIX, Windows, EUI-48)
-    '^' + ':'.join(['([0-9A-F]{1,2})'] * 6) + '$',
-    '^' + '-'.join(['([0-9A-F]{1,2})'] * 6) + '$',
-    #   4 bytes x 3 (Cisco)
-    '^' + ':'.join(['([0-9A-F]{1,4})'] * 3) + '$',
-    '^' + '-'.join(['([0-9A-F]{1,4})'] * 3) + '$',
-    '^' + r'\.'.join(['([0-9A-F]{1,4})'] * 3) + '$',
-    #   6 bytes x 2 (PostgreSQL)
-    '^' + '-'.join(['([0-9A-F]{5,6})'] * 2) + '$',
-    '^' + ':'.join(['([0-9A-F]{5,6})'] * 2) + '$',
-    #   12 bytes (bare, no delimiters)
-    '^(' + ''.join(['[0-9A-F]'] * 12) + ')$',
-    '^(' + ''.join(['[0-9A-F]'] * 11) + ')$',
-)
-#   For efficiency, each string regexp converted in place to its compiled
-#   counterpart.
-RE_MAC_FORMATS = [_re.compile(_, _re.IGNORECASE) for _ in RE_MAC_FORMATS]
+#: For efficiency, each string regexp converted in place to its compiled
+#: counterpart.
+RE_MAC_FORMATS = [
+    _re.compile(_, _re.IGNORECASE)
+    for _ in (
+        #   2 bytes x 6 (UNIX, Windows, EUI-48)
+        '^' + ':'.join(['([0-9A-F]{1,2})'] * 6) + '$',
+        '^' + '-'.join(['([0-9A-F]{1,2})'] * 6) + '$',
+        #   4 bytes x 3 (Cisco)
+        '^' + ':'.join(['([0-9A-F]{1,4})'] * 3) + '$',
+        '^' + '-'.join(['([0-9A-F]{1,4})'] * 3) + '$',
+        '^' + r'\.'.join(['([0-9A-F]{1,4})'] * 3) + '$',
+        #   6 bytes x 2 (PostgreSQL)
+        '^' + '-'.join(['([0-9A-F]{5,6})'] * 2) + '$',
+        '^' + ':'.join(['([0-9A-F]{5,6})'] * 2) + '$',
+        #   12 bytes (bare, no delimiters)
+        '^(' + ''.join(['[0-9A-F]'] * 12) + ')$',
+        '^(' + ''.join(['[0-9A-F]'] * 11) + ')$',
+    )
+]
 
 
 def valid_str(addr):
