@@ -51,15 +51,15 @@ Constants
 
 The following constants are used by the various *flags* arguments on netaddr class constructors.
 
-.. data:: netaddr.P
-          netaddr.INET_PTON
+.. data:: netaddr.INET_PTON
 
    Use inet_pton() semantics instead of inet_aton() when parsing IPv4.
 
    See the :meth:`IPAddress.__init__` documentation for details.
 
-   .. versionchanged:: 0.10.0
-        This parsing mode will become stricter in the future and it will reject leading zeros.
+   .. versionchanged:: NEXT_NETADDR_VERSION
+        Started rejecting leading zeros regardless of the platform (it was previously allowed
+        on some).
 
 .. data:: netaddr.INET_ATON
 
@@ -69,15 +69,13 @@ The following constants are used by the various *flags* arguments on netaddr cla
 
     .. versionadded:: 0.10.0
 
-.. data:: netaddr.Z
-          netaddr.ZEROFILL
+.. data:: netaddr.ZEROFILL
 
    Remove any preceding zeros from IPv4 address octets before parsing.
 
    See the :meth:`IPAddress.__init__` documentation for details.
 
-.. data:: netaddr.N
-          netaddr.NOHOST
+.. data:: netaddr.NOHOST
 
    Remove any host bits found to the right of an applied CIDR prefix.
 

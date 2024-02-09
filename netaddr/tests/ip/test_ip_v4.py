@@ -12,8 +12,6 @@ from netaddr import (
     spanning_cidr,
     AddrFormatError,
     ZEROFILL,
-    Z,
-    P,
     NOHOST,
 )
 
@@ -364,22 +362,26 @@ def test_ipaddress_inet_aton_constructor_v4():
     assert IPAddress('127', flags=INET_ATON) == IPAddress('127')
 
 
-def test_ipaddress_inet_pton_constructor_v4():
+@pytest.mark.parametrize(
+    'address',
+    [
+        '0177.01',
+        '0x7f.0.01',
+        '10',
+        '10.1',
+        '10.0.1',
+        '010.0.0.1',
+        '10.01.0.1',
+        '10.0.00.1',
+        '10.0.1.01',
+    ],
+)
+def test_ipaddress_inet_pton_constructor_v4_rejects_invalid_input(address):
     with pytest.raises(AddrFormatError):
-        IPAddress('0177.01', flags=INET_PTON)
+        IPAddress(address, flags=INET_PTON)
 
-    with pytest.raises(AddrFormatError):
-        IPAddress('0x7f.0.01', flags=INET_PTON)
 
-    with pytest.raises(AddrFormatError):
-        IPAddress('10', flags=INET_PTON)
-
-    with pytest.raises(AddrFormatError):
-        IPAddress('10.1', flags=INET_PTON)
-
-    with pytest.raises(AddrFormatError):
-        IPAddress('10.0.1', flags=INET_PTON)
-
+def test_ipaddress_inet_pton_constructor_v4_accepts_valid_input():
     assert IPAddress('10.0.0.1', flags=INET_PTON) == IPAddress('10.0.0.1')
 
 
@@ -394,9 +396,6 @@ def test_ipaddress_constructor_zero_filled_octets_v4():
         assert IPAddress('010.000.001', flags=INET_PTON | ZEROFILL)
 
     assert IPAddress('010.000.000.001', flags=INET_PTON | ZEROFILL) == IPAddress('10.0.0.1')
-
-    #   Short flags.
-    assert IPAddress('010.000.000.001', flags=P | Z) == IPAddress('10.0.0.1')
 
 
 def test_ipnetwork_constructor_v4():

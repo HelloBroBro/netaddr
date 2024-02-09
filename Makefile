@@ -55,7 +55,7 @@ push_tags:
 	@echo 'syncing tags'
 	git push --tags
 
-ci: lint test_with_junitxml
+ci: lint test-ci
 
 lint:
 	ruff format --check
@@ -63,11 +63,10 @@ lint:
 fix:
 	ruff format
 
-test: clean
+test:
 	@echo 'running test suite'
-	pip install -r requirements.txt
-	py.test netaddr/tests
+	pytest
 
-test_with_junitxml: clean
-	@echo 'running test suite with JUnit XML output'
-	py.test -vv --junitxml=junit.xml
+.PHONY: test-ci
+test-ci:
+	pytest --cov-report term --cov-report html --cov-report xml --cov-report term-missing --cov=netaddr --cov-branch
