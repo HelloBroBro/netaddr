@@ -6,11 +6,36 @@ NEXT_NETADDR_VERSION
 
 Date: not released yet
 
+--------------
+Release: 1.0.0
+--------------
+
+Date: 2024-02-10
+
 Removed:
 
 * Drop support for Python versions lower than 3.7.
 * Remove the flag shorthands: ``N``, ``P`` and ``Z``. Use :data:`NOHOST`, :data:`INET_PTON`
   and :data:`ZEROFILL` instead.
+* Remove abbreviated CIDR format support in :class:`IPNetwork` (``implicit_prefix=True``),
+  use :func:`cidr_abbrev_to_verbose` if you need this behavior.
+* Remove the ``IPAddress.is_private`` method.
+
+  There are more precise replacements for subset of the addresses that used to handled by ``is_private``:
+
+  * :meth:`IPAddress.is_link_local`
+  * :meth:`IPAddress.is_ipv4_private_use`
+  * :meth:`IPAddress.is_ipv6_unique_local`
+  * :meth:`IPAddress.is_global`
+
+  The following address blocks used to be handled by ``is_private`` have no dedicated
+  convenience methods and you'll have to handle them manually or request a method
+  addition:
+
+  * ``100.64.0.0/10`` – Shared Address Space
+  * ``192.0.0.0/24`` – IETF Protocol Assignments (watch out – there are exceptions in there)
+  * ``198.18.0.0/15`` – Benchmarking
+  * ``239.0.0.0``-``239.255.255.255`` – ``240.0.0.0/4`` is Reserved, ``239.0.0.0/8`` – unclear
 
 Changed:
 
@@ -19,9 +44,25 @@ Changed:
 
   If you need to allow and discard leading zeros use the :data:`ZEROFILL` flag.
 
-  This change will implicit conversions from ``str`` in all relevant contexts. If you need
+  This change will affect implicit conversions from ``str`` in all relevant contexts. If you need
   to control the IPv4 parsing mode construct :class:`IPAddress` objects explicitly.
+* Stop parsing IPv4 addresses permissively (``inet_aton()``-like) by default.
 
+  :data:`INET_PTON` is the default mode.
+
+  If you need to be permissive and parse using ``inet_aton()`` semantics use the
+  :data:`INET_ATON` flag.
+
+  This change will affect implicit conversions from ``str`` in all relevant contexts. If you
+  need to control the IPv4 parsing mode construct :class:`IPAddress` objects explicitly.
+* Apply the two changes above to :func:`valid_ipv4` as well.
+* Update the address databases to the 2024-02-10 versions.
+
+Fixed:
+
+* Return ``False`` instead of raising :exc:`AddrFormatError` when an empty string is passed
+  to :func:`valid_ipv4` or :func:`valid_ipv6`.
+* Fix handling of ``dialect`` provided to :class:`EUI` during copy-construction.
 
 ---------------
 Release: 0.10.1
@@ -74,7 +115,7 @@ Deprecated:
 
   If you need to allow and discard leading zeros use the :data:`ZEROFILL` flag.
 
-  This change will implicit conversions from ``str`` in all relevant contexts. If you need
+  This change will affect implicit conversions from ``str`` in all relevant contexts. If you need
   to control the IPv4 parsing mode construct :class:`IPAddress` objects explicitly.
 * Deprecate parsing IPv4 addresses permissively (``inet_aton()``-like) by default.
 
@@ -83,9 +124,9 @@ Deprecated:
   If you need to be permissive and parse using ``inet_aton()`` semantics use the
   :data:`INET_ATON` flag.
 
-  This change will implicit conversions from ``str`` in all relevant contexts. If you need
+  This change will affect implicit conversions from ``str`` in all relevant contexts. If you need
   to control the IPv4 parsing mode construct :class:`IPAddress` objects explicitly.
-* Deprecate the :meth:`IPAddress.is_private` method. Migration instructions in the
+* Deprecate the ``IPAddress.is_private`` method. Migration instructions in the
   documentation.
 
 Other:

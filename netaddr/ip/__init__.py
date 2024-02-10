@@ -164,49 +164,6 @@ class BaseIP(object):
         elif self._module.version == 6:
             return self in IPV6_LOOPBACK
 
-    def is_private(self):
-        """
-        :return: ``True`` if this IP is for internal/private use only
-            (i.e. non-public), ``False`` otherwise. Reference: RFCs 1918,
-            3330, 4193, 3879 and 2365.
-
-        .. note:: |ipv4_in_ipv6_handling|
-
-        .. deprecated:: 0.10.0
-            The ``is_private`` method has been mixing several different address types together
-            which could lead to unexpected results. There are more precise
-            replacements for subset of the addresses handled by ``is_private`` today:
-
-            * :meth:`is_link_local`
-            * :meth:`is_ipv4_private_use`
-            * :meth:`is_ipv6_unique_local`
-
-            There is also the :meth:`is_global` method that lets you handle all globally
-            reachable (or not) addresses.
-
-            The following address blocks currently handled by ``is_private`` have no
-            convenience methods and you'll have to handle them manually or request a method
-            addition:
-
-            * ``100.64.0.0/10`` – Shared Address Space
-            * ``192.0.0.0/24`` – IETF Protocol Assignments
-            * ``198.18.0.0/15`` – Benchmarking
-            * ``239.0.0.0``-``239.255.255.255``
-        """
-        if self._module.version == 4:
-            for cidr in IPV4_PRIVATEISH:
-                if self in cidr:
-                    return True
-        elif self._module.version == 6:
-            for cidr in IPV6_PRIVATEISH:
-                if self in cidr:
-                    return True
-
-        if self.is_link_local():
-            return True
-
-        return False
-
     def is_link_local(self):
         """
         :return: ``True`` if this IP is link-local address ``False`` otherwise.
@@ -296,38 +253,37 @@ class IPAddress(BaseIP):
 
             Allowed flag values:
 
-            * The default (``0``) or :data:`INET_ATON`. Follows `inet_aton semantics
+            * :data:`INET_ATON`. Follows `inet_aton semantics
               <https://www.netmeister.org/blog/inet_aton.html>`_ and allows all kinds of
               weird-looking addresses to be parsed. For example:
 
-              >>> IPAddress('1')
+              >>> IPAddress('1', flags=INET_ATON)
               IPAddress('0.0.0.1')
-              >>> IPAddress('1.0xf')
+              >>> IPAddress('1.0xf', flags=INET_ATON)
               IPAddress('1.0.0.15')
-              >>> IPAddress('010.020.030.040')
+              >>> IPAddress('010.020.030.040', flags=INET_ATON)
               IPAddress('8.16.24.32')
 
-            * ``INET_ATON | ZEROFILL`` or :data:`ZEROFILL` – like the default, except leading zeros are discarded:
+            * ``INET_ATON | ZEROFILL`` or :data:`ZEROFILL` – like ``INET_ATON``, except leading zeros are discarded:
 
               >>> IPAddress('010', flags=INET_ATON | ZEROFILL)
               IPAddress('0.0.0.10')
 
-            * :data:`INET_PTON` – requires four decimal octets:
+            * The default (``0``) or :data:`INET_PTON` – requires four decimal octets:
 
               >>> IPAddress('10.0.0.1', flags=INET_PTON)
               IPAddress('10.0.0.1')
 
               Leading zeros may be ignored or rejected, depending on the platform.
 
-            * ``INET_PTON | ZEROFILL`` – like :data:`INET_PTON`, except leading zeros are
-              discarded:
+            * ``INET_PTON | ZEROFILL`` – like the default :data:`INET_PTON`, except leading
+              zeros are discarded:
 
               >>> IPAddress('010.020.030.040', flags=INET_PTON | ZEROFILL)
               IPAddress('10.20.30.40')
 
-        .. versionchanged:: 0.10.0
-            The default IPv4 parsing mode is scheduled to become :data:`INET_PTON` in the next
-            major release.
+        .. versionchanged:: 1.0.0
+            Changed the default IPv4 parsing mode from :data:`INET_ATON` to :data:`INET_PTON`.
         """
         super(IPAddress, self).__init__()
 
@@ -764,10 +720,6 @@ class IPAddress(BaseIP):
         Whether or not an address can actually be reached in any local or global context will
         depend on the network configuration and may differ from what this method returns.
 
-        Currently there can be addresses that are neither ``is_global()`` nor :meth:`is_private`.
-        There are also addresses that are both. All things being equal ``is_global()`` should
-        be considered more trustworthy.
-
         Examples:
 
         >>> IPAddress('1.1.1.1').is_global()
@@ -921,7 +873,7 @@ class IPListMixin(object):
         return True
 
 
-def parse_ip_network(module, addr, implicit_prefix=False, flags=0):
+def parse_ip_network(module, addr, flags=0):
     if isinstance(addr, tuple):
         #   CIDR integer tuple
         if len(addr) != 2:
@@ -934,9 +886,6 @@ def parse_ip_network(module, addr, implicit_prefix=False, flags=0):
             raise AddrFormatError('invalid prefix for %s tuple!' % module.family_name)
     elif isinstance(addr, str):
         #   CIDR-like string subnet
-        if implicit_prefix:
-            # TODO: deprecate this option in netaddr 0.8.x
-            addr = cidr_abbrev_to_verbose(addr)
 
         if '/' in addr:
             val1, val2 = addr.split('/', 1)
@@ -1009,36 +958,15 @@ class IPNetwork(BaseIP, IPListMixin):
 
         x.x.x.x/y.y.y.y -> 192.0.2.0/0.0.0.255
         x::/y:: -> fe80::/3f:ffff:ffff:ffff:ffff:ffff:ffff:ffff
-
-    d) Abbreviated CIDR format (as of netaddr 0.7.x this requires the \
-       optional constructor argument ``implicit_prefix=True``)::
-
-        x       -> 192
-        x/y     -> 10/8
-        x.x/y   -> 192.168/16
-        x.x.x/y -> 192.168.0/24
-
-        which are equivalent to::
-
-        x.0.0.0/y   -> 192.0.0.0/24
-        x.0.0.0/y   -> 10.0.0.0/8
-        x.x.0.0/y   -> 192.168.0.0/16
-        x.x.x.0/y   -> 192.168.0.0/24
-
-       .. deprecated:: 0.10.0
-
-    .. warning::
-
-        The next release (0.9.0) will contain a backwards incompatible change
-        connected to handling of RFC 6164 IPv6 addresses (/127 and /128 subnets).
-        When iterating ``IPNetwork`` and ``IPNetwork.iter_hosts()`` the first
-        addresses in the networks will no longer be excluded and ``broadcast``
-        will be ``None``.
+    
+    .. versionchanged:: 1.0.0
+        Removed the ``implicit_prefix`` switch that used to enable the abbreviated CIDR
+        format support, use :func:`cidr_abbrev_to_verbose` if you need this behavior.
     """
 
     __slots__ = ('_prefixlen',)
 
-    def __init__(self, addr, implicit_prefix=False, version=None, flags=0):
+    def __init__(self, addr, version=None, flags=0):
         """
         Constructor.
 
@@ -1047,13 +975,6 @@ class IPNetwork(BaseIP, IPListMixin):
             (string) format, an tuple containing and integer address and a
             network prefix, or another IPAddress/IPNetwork object (copy
             construction).
-
-        :param implicit_prefix: (optional) if True, the constructor uses
-            classful IPv4 rules to select a default prefix when one is not
-            provided. If False it uses the length of the IP address version.
-            (default: False)
-
-            .. deprecated:: 0.10.0
 
         :param version: (optional) optimizes version detection if specified
             and distinguishes between IPv4 and IPv6 for addresses with an
@@ -1086,25 +1007,21 @@ class IPNetwork(BaseIP, IPListMixin):
             module = addr._module
             prefixlen = module.width
         elif version == 4:
-            value, prefixlen = parse_ip_network(
-                _ipv4, addr, implicit_prefix=implicit_prefix, flags=flags
-            )
+            value, prefixlen = parse_ip_network(_ipv4, addr, flags=flags)
             module = _ipv4
         elif version == 6:
-            value, prefixlen = parse_ip_network(
-                _ipv6, addr, implicit_prefix=implicit_prefix, flags=flags
-            )
+            value, prefixlen = parse_ip_network(_ipv6, addr, flags=flags)
             module = _ipv6
         else:
             if version is not None:
                 raise ValueError('%r is an invalid IP version!' % version)
             try:
                 module = _ipv4
-                value, prefixlen = parse_ip_network(module, addr, implicit_prefix, flags)
+                value, prefixlen = parse_ip_network(module, addr, flags)
             except AddrFormatError:
                 try:
                     module = _ipv6
-                    value, prefixlen = parse_ip_network(module, addr, implicit_prefix, flags)
+                    value, prefixlen = parse_ip_network(module, addr, flags)
                 except AddrFormatError:
                     pass
 
@@ -1169,14 +1086,7 @@ class IPNetwork(BaseIP, IPListMixin):
 
     @property
     def broadcast(self):
-        """The broadcast address of this `IPNetwork` object.
-
-        .. warning::
-
-            The next release (0.9.0) will contain a backwards incompatible change
-            connected to handling of RFC 6164 IPv6 addresses (/127 and /128 subnets).
-            ``broadcast`` will be ``None`` when dealing with those networks.
-        """
+        """The broadcast address of this `IPNetwork` object."""
         if (self._module.width - self._prefixlen) <= 1:
             return None
         else:
@@ -1483,13 +1393,6 @@ class IPNetwork(BaseIP, IPListMixin):
         - for IPv6, only Subnet-Router anycast address (first address in the \
           network) is excluded as per RFC 4291 section 2.6.1, excepted when using \
           /127 or /128 subnets as per RFC 6164.
-
-        .. warning::
-
-            The next release (0.9.0) will contain a backwards incompatible change
-            connected to handling of RFC 6164 IPv6 addresses (/127 and /128 subnets).
-            When iterating ``IPNetwork`` and ``IPNetwork.iter_hosts()`` the first
-            addresses in the networks will no longer be excluded.
 
         :return: an IPAddress iterator
         """
@@ -2082,17 +1985,6 @@ IPV4_PRIVATE_USE = [
     IPNetwork('192.168.0.0/16'),  #  Class B private network local communication (RFC 1918)
 ]
 
-IPV4_PRIVATEISH = tuple(IPV4_PRIVATE_USE) + (
-    IPNetwork('100.64.0.0/10'),  #   Carrier grade NAT (RFC 6598)
-    IPNetwork('192.0.0.0/24'),  #   IANA IPv4 Special Purpose Address Registry (RFC 5736)
-    # protocol assignments
-    # benchmarking
-    IPNetwork(
-        '198.18.0.0/15'
-    ),  #  Testing of inter-network communications between subnets (RFC 2544)
-    IPRange('239.0.0.0', '239.255.255.255'),  #   Administrative Multicast
-)
-
 IPV4_LINK_LOCAL = IPNetwork('169.254.0.0/16')
 
 IPV4_MULTICAST = IPNetwork('224.0.0.0/4')
@@ -2142,11 +2034,6 @@ IPV4_NOT_GLOBALLY_REACHABLE_EXCEPTIONS = [
 IPV6_LOOPBACK = IPNetwork('::1/128')
 
 IPV6_UNIQUE_LOCAL = IPNetwork('fc00::/7')
-
-IPV6_PRIVATEISH = (
-    IPV6_UNIQUE_LOCAL,
-    IPNetwork('fec0::/10'),  #   Site Local Addresses (deprecated - RFC 3879)
-)
 
 IPV6_LINK_LOCAL = IPNetwork('fe80::/10')
 

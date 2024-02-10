@@ -120,10 +120,10 @@ def valid_str(addr, flags=0):
         addr value. Future use - currently has no effect.
 
     :return: ``True`` if IPv6 address is valid, ``False`` otherwise.
-    """
-    if addr == '':
-        raise AddrFormatError('Empty strings are not supported!')
 
+    .. versionchanged:: 1.0.0
+        Returns ``False`` instead of raising :exc:`AddrFormatError` for empty strings.
+    """
     try:
         _inet_pton(AF_INET6, addr)
     except:

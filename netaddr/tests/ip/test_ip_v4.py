@@ -187,9 +187,6 @@ def test_ipnetwork_v4_constructor():
     assert IPNetwork('192.168/16') == IPNetwork('192.168.0.0/16')
     assert IPNetwork('192.168.0.15') == IPNetwork('192.168.0.15/32')
     assert IPNetwork('192.168') == IPNetwork('192.168.0.0/32')
-    assert IPNetwork('192.168', implicit_prefix=True) == IPNetwork('192.168.0.0/24')
-    assert IPNetwork('192.168', True) == IPNetwork('192.168.0.0/24')
-    assert IPNetwork('10.0.0.1', True) == IPNetwork('10.0.0.1/8')
 
 
 def test_ipaddress_integer_operations_v4():
@@ -347,19 +344,16 @@ def test_ipaddress_integer_constructor_v6():
 
 
 def test_ipaddress_inet_aton_constructor_v4():
-    assert IPAddress('0x7f.0x1') == IPAddress('127.0.0.1')
-    assert IPAddress('0x7f.0x0.0x0.0x1') == IPAddress('127.0.0.1')
-    assert IPAddress('0177.01') == IPAddress('127.0.0.1')
-    assert IPAddress('0x7f.0.01') == IPAddress('127.0.0.1')
+    assert IPAddress('0x7f.0x1', flags=INET_ATON) == IPAddress('127.0.0.1')
+    assert IPAddress('0x7f.0x0.0x0.0x1', flags=INET_ATON) == IPAddress('127.0.0.1')
+    assert IPAddress('0177.01', flags=INET_ATON) == IPAddress('127.0.0.1')
+    assert IPAddress('0x7f.0.01', flags=INET_ATON) == IPAddress('127.0.0.1')
 
     # Partial addresses - pretty weird, but valid ...
-    assert IPAddress('127') == IPAddress('0.0.0.127')
-    assert IPAddress('127') == IPAddress('0.0.0.127')
-    assert IPAddress('127.1') == IPAddress('127.0.0.1')
-    assert IPAddress('127.0.1') == IPAddress('127.0.0.1')
-
-    # Verify explicit INET_ATON is the same as the current default
-    assert IPAddress('127', flags=INET_ATON) == IPAddress('127')
+    assert IPAddress('127', flags=INET_ATON) == IPAddress('0.0.0.127')
+    assert IPAddress('127', flags=INET_ATON) == IPAddress('0.0.0.127')
+    assert IPAddress('127.1', flags=INET_ATON) == IPAddress('127.0.0.1')
+    assert IPAddress('127.0.1', flags=INET_ATON) == IPAddress('127.0.0.1')
 
 
 @pytest.mark.parametrize(
@@ -380,17 +374,21 @@ def test_ipaddress_inet_pton_constructor_v4_rejects_invalid_input(address):
     with pytest.raises(AddrFormatError):
         IPAddress(address, flags=INET_PTON)
 
+    with pytest.raises(AddrFormatError):
+        IPAddress(address)
+
 
 def test_ipaddress_inet_pton_constructor_v4_accepts_valid_input():
     assert IPAddress('10.0.0.1', flags=INET_PTON) == IPAddress('10.0.0.1')
 
 
 def test_ipaddress_constructor_zero_filled_octets_v4():
-    assert IPAddress('010.000.000.001') == IPAddress('8.0.0.1')
-    assert IPAddress('010.000.000.001', flags=ZEROFILL) == IPAddress('10.0.0.1')
-    assert IPAddress('010.000.001', flags=ZEROFILL) == IPAddress('10.0.0.1')
-    # Verify explicit INET_ATON is the same as the current default
+    assert IPAddress('010.000.000.001', flags=INET_ATON) == IPAddress('8.0.0.1')
     assert IPAddress('010.000.000.001', flags=INET_ATON | ZEROFILL) == IPAddress('10.0.0.1')
+    assert IPAddress('010.000.001', flags=INET_ATON | ZEROFILL) == IPAddress('10.0.0.1')
+
+    with pytest.raises(AddrFormatError):
+        assert IPAddress('010.000.001', flags=ZEROFILL)
 
     with pytest.raises(AddrFormatError):
         assert IPAddress('010.000.001', flags=INET_PTON | ZEROFILL)
@@ -406,16 +404,8 @@ def test_ipnetwork_constructor_v4():
     assert IPNetwork(IPNetwork('192.0.2.0/24')) == IPNetwork('192.0.2.0/24')
 
 
-def test_ip_network_cosntructor_implicit_prefix_flag_v4():
-    assert IPNetwork('192.0.2.0', implicit_prefix=True) == IPNetwork('192.0.2.0/24')
-    assert IPNetwork('231.192.0.15', implicit_prefix=True) == IPNetwork('231.192.0.15/4')
-    assert IPNetwork('10', implicit_prefix=True) == IPNetwork('10.0.0.0/8')
-
-
 def test_ipnetwork_constructor_other_flags_v4():
     assert IPNetwork('172.24.200') == IPNetwork('172.24.200.0/32')
-    assert IPNetwork('172.24.200', implicit_prefix=True) == IPNetwork('172.24.200.0/16')
-    assert IPNetwork('172.24.200', implicit_prefix=True, flags=NOHOST) == IPNetwork('172.24.0.0/16')
 
 
 def test_ipnetwork_bad_string_constructor():

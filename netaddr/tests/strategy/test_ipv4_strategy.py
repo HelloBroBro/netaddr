@@ -1,6 +1,6 @@
 import pytest
 
-from netaddr import INET_PTON, AddrFormatError
+from netaddr import INET_ATON, INET_PTON, AddrFormatError
 from netaddr.strategy import ipv4
 
 
@@ -28,17 +28,15 @@ def test_strategy_ipv4():
 
 def test_strategy_inet_aton_behaviour():
     # inet_aton() is a very old system call and is very permissive with
-    # regard to what is assume is a valid IPv4 address. Unfortunately, it
-    # is also the most widely used by system software used in software today,
-    # so netaddr supports this behaviour by default.
+    # regard to what is assume is a valid IPv4 address.
 
-    assert ipv4.str_to_int('127') == 127
-    assert ipv4.str_to_int('0x7f') == 127
-    assert ipv4.str_to_int('0177') == 127
-    assert ipv4.str_to_int('127.1') == 2130706433
-    assert ipv4.str_to_int('0x7f.1') == 2130706433
-    assert ipv4.str_to_int('0177.1') == 2130706433
-    assert ipv4.str_to_int('127.0.0.1') == 2130706433
+    assert ipv4.str_to_int('127', flags=INET_ATON) == 127
+    assert ipv4.str_to_int('0x7f', flags=INET_ATON) == 127
+    assert ipv4.str_to_int('0177', flags=INET_ATON) == 127
+    assert ipv4.str_to_int('127.1', flags=INET_ATON) == 2130706433
+    assert ipv4.str_to_int('0x7f.1', flags=INET_ATON) == 2130706433
+    assert ipv4.str_to_int('0177.1', flags=INET_ATON) == 2130706433
+    assert ipv4.str_to_int('127.0.0.1', flags=INET_ATON) == 2130706433
 
 
 def test_strategy_inet_pton_behaviour():
@@ -66,3 +64,16 @@ def test_strategy_inet_pton_behaviour():
         ipv4.str_to_int('0177.1', flags=INET_PTON)
 
     assert ipv4.str_to_int('127.0.0.1', flags=INET_PTON) == 2130706433
+
+
+@pytest.mark.parametrize(
+    ('address', 'flags', 'valid'),
+    [
+        ['', 0, False],
+        ['192', 0, False],
+        ['192', INET_ATON, True],
+        ['127.0.0.1', 0, True],
+    ],
+)
+def test_valid_str(address, flags, valid):
+    assert ipv4.valid_str(address, flags) is valid
