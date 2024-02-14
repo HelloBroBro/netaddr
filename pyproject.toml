@@ -41,7 +41,6 @@ classifiers = [
     "Intended Audience :: System Administrators",
     "Intended Audience :: Telecommunications Industry",
     "License :: OSI Approved :: BSD License",
-    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
@@ -91,9 +90,15 @@ classifiers = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+shell = ['ipython']
+
 [project.urls]
+Documentation = "https://netaddr.readthedocs.io/en/latest/"
 Download = "https://pypi.org/project/netaddr/"
-Repository = "https://github.com/drkjam/netaddr/"
+Repository = "https://github.com/netaddr/netaddr/"
+Changelog = "https://netaddr.readthedocs.io/en/latest/changes.html"
+"Issue tracker" = "https://github.com/netaddr/netaddr/issues"
 
 [project.scripts]
 netaddr = "netaddr.cli:main"

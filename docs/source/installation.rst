@@ -2,21 +2,7 @@
 How to install netaddr
 ======================
 
-netaddr is available in various formats :
-
-- source code repository
-- source distribution packages (tarball and zip formats)
-- Python universal wheel packages
-
 Various Linux distributions make it available via their package managers.
-
----------------------
-Locating the software
----------------------
-
-The netaddr project is hosted here on github
-
-    https://github.com/drkjam/netaddr/
 
 ----------------------------------------
 Installing from the Python Package Index
@@ -28,6 +14,40 @@ Download and install the latest version from PyPI -
 https://pypi.org/project/pip and run the following command ::
 
     pip install netaddr
+
+If you want to use the :ref:`IPython-based interactive shell <interactive-shell>` you need to install the
+package like ::
+
+    pip install 'netaddr[shell]'
+
+or install IPython directly ::
+
+    pip install ipython
+
+--------------------------------------------------------
+Installing using your Linux distribution package manager
+--------------------------------------------------------
+
+Various Linux distributions make netaddr available via their package managers.
+
+.. note::
+
+    The netaddr versions provided by Linux distributions may be outdated.
+
+Refer to your distribution's documentation for installation instructions.
+
+Example commands:
+
+.. code-block:: shell
+
+    # Debian, Ubuntu
+    sudo apt install python3-netaddr
+
+    # Fedora
+    # Base installation
+    sudo dnf install python3-netaddr
+    # The CLI tool
+    sudo dnf install python3-netaddr-shell
 
 --------------------------------
 Installing from a source package
