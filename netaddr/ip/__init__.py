@@ -829,7 +829,10 @@ class IPListMixin(object):
                 item = iter([IPAddress(self.first, self._module.version)])
             else:
                 start_ip = IPAddress(self.first + start, self._module.version)
-                end_ip = IPAddress(self.first + stop - step, self._module.version)
+                # We want to stop one short of stop – it depends on which way are we slicing
+                # (increasing or decreasing).
+                one_before_stop = stop + (1 if step < 0 else -1)
+                end_ip = IPAddress(self.first + one_before_stop, self._module.version)
                 item = iter_iprange(start_ip, end_ip, step)
         else:
             try:
@@ -893,15 +896,7 @@ def parse_ip_network(module, addr, flags=0):
             val1 = addr
             val2 = None
 
-        try:
-            ip = IPAddress(val1, module.version, flags=INET_PTON)
-        except AddrFormatError:
-            if module.version == 4:
-                #   Try a partial IPv4 network address...
-                expanded_addr = _ipv4.expand_partial_address(val1)
-                ip = IPAddress(expanded_addr, module.version, flags=INET_PTON)
-            else:
-                raise AddrFormatError('invalid IPNetwork address %s!' % addr)
+        ip = IPAddress(val1, module.version, flags=INET_PTON)
         value = ip._value
 
         try:
@@ -962,6 +957,10 @@ class IPNetwork(BaseIP, IPListMixin):
     .. versionchanged:: 1.0.0
         Removed the ``implicit_prefix`` switch that used to enable the abbreviated CIDR
         format support, use :func:`cidr_abbrev_to_verbose` if you need this behavior.
+
+    .. versionchanged:: 1.1.0
+        Removed partial IPv4 address support accidentally left when making 1.0.0 release.
+        Use :func:`expand_partial_ipv4_address` if you need this behavior.
     """
 
     __slots__ = ('_prefixlen',)

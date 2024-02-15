@@ -102,35 +102,25 @@ def test_ipnetwork_index_operations_v4():
     assert ip[-1] == IPAddress('192.0.2.23')
 
 
-def test_ipnetwork_slice_operations_v4():
+@pytest.mark.parametrize(
+    ['start', 'stop', 'step'],
+    [
+        [None, None, -1],
+        [-1, 0, -2],
+        [-1, None, -1],
+        [-1, None, -3],
+        [0, None, 4],
+        [0, -1, None],
+        [0, 4, None],
+        [1, None, 4],
+        [1, 4, 2],
+    ],
+)
+def test_ipnetwork_slice_operations_v4(start, stop, step):
     ip = IPNetwork('192.0.2.16/29')
-
-    assert isinstance(ip[0:4], types.GeneratorType)
-
-    assert list(ip[0:4]) == [
-        IPAddress('192.0.2.16'),
-        IPAddress('192.0.2.17'),
-        IPAddress('192.0.2.18'),
-        IPAddress('192.0.2.19'),
-    ]
-
-    assert list(ip[0::2]) == [
-        IPAddress('192.0.2.16'),
-        IPAddress('192.0.2.18'),
-        IPAddress('192.0.2.20'),
-        IPAddress('192.0.2.22'),
-    ]
-
-    assert list(ip[-1::-1]) == [
-        IPAddress('192.0.2.23'),
-        IPAddress('192.0.2.22'),
-        IPAddress('192.0.2.21'),
-        IPAddress('192.0.2.20'),
-        IPAddress('192.0.2.19'),
-        IPAddress('192.0.2.18'),
-        IPAddress('192.0.2.17'),
-        IPAddress('192.0.2.16'),
-    ]
+    result = ip[start:stop:step]
+    assert isinstance(result, types.GeneratorType)
+    assert list(result) == list(ip)[start:stop:step]
 
 
 def test_ipnetwork_sort_order():
@@ -164,7 +154,6 @@ def test_ipaddress_and_ipnetwork_canonical_sort_order_by_version():
         IPNetwork('192.0.3.0/24'),
         IPNetwork('192.0.2.0/24'),
         IPNetwork('fe80::/64'),
-        IPNetwork('172.24/12'),
         IPAddress('10.0.0.1'),
     ]
 
@@ -173,7 +162,6 @@ def test_ipaddress_and_ipnetwork_canonical_sort_order_by_version():
 
     assert ip_list == [
         IPAddress('10.0.0.1'),
-        IPNetwork('172.24.0.0/12'),
         IPNetwork('192.0.2.0/24'),
         IPNetwork('192.0.2.128/28'),
         IPAddress('192.0.2.130'),
@@ -184,9 +172,7 @@ def test_ipaddress_and_ipnetwork_canonical_sort_order_by_version():
 
 
 def test_ipnetwork_v4_constructor():
-    assert IPNetwork('192.168/16') == IPNetwork('192.168.0.0/16')
     assert IPNetwork('192.168.0.15') == IPNetwork('192.168.0.15/32')
-    assert IPNetwork('192.168') == IPNetwork('192.168.0.0/32')
 
 
 def test_ipaddress_integer_operations_v4():
@@ -229,29 +215,6 @@ def test_ipaddress_binary_operations_v4():
     assert IPAddress('1.2.3.4').packed == '\x01\x02\x03\x04'.encode('ascii')
 
 
-def test_ipnetwork_slices_v4():
-    assert list(IPNetwork('192.0.2.0/29')[0:-1]) == [
-        IPAddress('192.0.2.0'),
-        IPAddress('192.0.2.1'),
-        IPAddress('192.0.2.2'),
-        IPAddress('192.0.2.3'),
-        IPAddress('192.0.2.4'),
-        IPAddress('192.0.2.5'),
-        IPAddress('192.0.2.6'),
-    ]
-
-    assert list(IPNetwork('192.0.2.0/29')[::-1]) == [
-        IPAddress('192.0.2.7'),
-        IPAddress('192.0.2.6'),
-        IPAddress('192.0.2.5'),
-        IPAddress('192.0.2.4'),
-        IPAddress('192.0.2.3'),
-        IPAddress('192.0.2.2'),
-        IPAddress('192.0.2.1'),
-        IPAddress('192.0.2.0'),
-    ]
-
-
 def test_iterhosts_v4():
     assert list(IPNetwork('192.0.2.0/29').iter_hosts()) == [
         IPAddress('192.0.2.1'),
@@ -290,23 +253,6 @@ def test_ipnetwork_equality_v4():
     assert IPNetwork('192.0.2.65/255.255.254.0') == IPNetwork('192.0.2.65/23')
     assert IPNetwork('192.0.2.65/255.255.255.0') != IPNetwork('192.0.2.0/23')
     assert IPNetwork('192.0.2.65/255.255.254.0') != IPNetwork('192.0.2.65/24')
-
-
-def test_ipnetwork_slicing_v4():
-    ip = IPNetwork('192.0.2.0/23')
-
-    assert ip.first == 3221225984
-    assert ip.last == 3221226495
-
-    assert ip[0] == IPAddress('192.0.2.0')
-    assert ip[-1] == IPAddress('192.0.3.255')
-
-    assert list(ip[::128]) == [
-        IPAddress('192.0.2.0'),
-        IPAddress('192.0.2.128'),
-        IPAddress('192.0.3.0'),
-        IPAddress('192.0.3.128'),
-    ]
 
 
 def test_ip_network_membership_v4():
@@ -402,10 +348,6 @@ def test_ipnetwork_constructor_v4():
     assert IPNetwork('192.0.2.0/0.0.0.255') == IPNetwork('192.0.2.0/24')
     assert IPNetwork(IPNetwork('192.0.2.0/24')) == IPNetwork('192.0.2.0/24')
     assert IPNetwork(IPNetwork('192.0.2.0/24')) == IPNetwork('192.0.2.0/24')
-
-
-def test_ipnetwork_constructor_other_flags_v4():
-    assert IPNetwork('172.24.200') == IPNetwork('172.24.200.0/32')
 
 
 def test_ipnetwork_bad_string_constructor():
