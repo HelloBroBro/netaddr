@@ -27,6 +27,10 @@ dist: clean
 	@echo 'building netaddr release'
 	python -m build
 
+.PHONY: build-and-publish
+build-and-publish: dist
+	twine upload dist/*
+
 doc:
 	@echo 'building documentation'
 	pip install sphinx

@@ -95,6 +95,8 @@ def valid_str(addr, flags=0):
     .. versionchanged:: 1.0.0
         Returns ``False`` instead of raising :exc:`AddrFormatError` for empty strings.
     """
+    if not isinstance(addr, str):
+        raise TypeError('Invalid type: %s' % type(addr))
     try:
         str_to_int(addr, flags)
     except AddrFormatError:
@@ -121,11 +123,12 @@ def str_to_int(addr, flags=0):
 
     try:
         if pton_mode:
-            return _struct.unpack('>I', _inet_pton(AF_INET, addr))[0]
+            packed = _inet_pton(AF_INET, addr)
         else:
-            return _struct.unpack('>I', _inet_aton(addr))[0]
-    except Exception:
+            packed = _inet_aton(addr)
+    except OSError:
         raise error
+    return _struct.unpack('>I', packed)[0]
 
 
 def int_to_str(int_val, dialect=None):

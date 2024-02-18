@@ -87,16 +87,26 @@ def test_strategy_ipv6_valid_str(str_value):
         '',
         'g:h:i:j:k:l:m:n',  # bad chars.
         '0:0:0:0:0:0:0:0:0',  # too long,
-        #   Unexpected types.
+    ),
+)
+def test_strategy_ipv6_is_not_valid_str(str_value):
+    assert not ipv6.valid_str(str_value)
+
+
+@pytest.mark.parametrize(
+    'str_value',
+    (
         [],
         (),
         {},
         True,
         False,
+        192,
     ),
 )
-def test_strategy_ipv6_is_not_valid_str(str_value):
-    assert not ipv6.valid_str(str_value)
+def test_valid_str_unexpected_types(str_value):
+    with pytest.raises(TypeError):
+        ipv6.valid_str(str_value)
 
 
 @pytest.mark.parametrize(

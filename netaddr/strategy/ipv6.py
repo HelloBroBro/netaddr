@@ -124,9 +124,11 @@ def valid_str(addr, flags=0):
     .. versionchanged:: 1.0.0
         Returns ``False`` instead of raising :exc:`AddrFormatError` for empty strings.
     """
+    if not isinstance(addr, str):
+        raise TypeError('Invalid type: %s' % type(addr))
     try:
         _inet_pton(AF_INET6, addr)
-    except:
+    except OSError:
         return False
     return True
 
@@ -142,9 +144,9 @@ def str_to_int(addr, flags=0):
     """
     try:
         packed_int = _inet_pton(AF_INET6, addr)
-        return packed_to_int(packed_int)
-    except Exception:
+    except OSError:
         raise AddrFormatError('%r is not a valid IPv6 address string!' % (addr,))
+    return packed_to_int(packed_int)
 
 
 def int_to_str(int_val, dialect=None):

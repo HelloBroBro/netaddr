@@ -7,6 +7,35 @@ NEXT_NETADDR_VERSION
 Date: not released yet
 
 --------------
+Release: 1.2.1
+--------------
+
+Date: 2024-02-17
+
+Fixed:
+
+* Fix bad version 1.2.0 upload to PyPI – now yanked. No changes to the package.
+
+--------------
+Release: 1.2.0
+--------------
+
+Date: 2024-02-17
+
+Added:
+
+* Add CLI tool subcommand to display :ref:`cli-network-info`.
+
+Changed:
+
+* Support running :ref:`interactive-shell` without IPython installed.
+
+Fixed:
+
+* Explicitly raise ``TypeError`` is a non-string value is passed to :func:`valid_ipv4`
+  or :func:`valid_ipv6`.
+
+--------------
 Release: 1.1.0
 --------------
 

@@ -331,7 +331,7 @@ class IPAddress(BaseIP):
                     for module in _ipv4, _ipv6:
                         try:
                             self._value = module.str_to_int(addr, flags)
-                        except:
+                        except AddrFormatError:
                             continue
                         else:
                             self._module = module
@@ -1395,32 +1395,28 @@ class IPNetwork(BaseIP, IPListMixin):
 
         :return: an IPAddress iterator
         """
-        it_hosts = iter([])
+        first_usable_address, last_usable_address = self._usable_range()
+        return iter_iprange(
+            IPAddress(first_usable_address, self._module.version),
+            IPAddress(last_usable_address, self._module.version),
+        )
 
-        # Common logic, first IP is always reserved.
-        first_usable_address = self.first + 1
-        if self._module.version == 4:
-            # IPv4 logic, last address is reserved for broadcast.
-            last_usable_address = self.last - 1
-        else:
-            # IPv6 logic, no broadcast address reserved.
-            last_usable_address = self.last
-
-        # If subnet has a size of less than 4, then it is a /31, /32, /127 or /128.
-        # Handle them as per RFC 3021 (IPv4) or RFC 6164 (IPv6), and don't reserve
-        # first or last IP address.
+    def _usable_range(self):
         if self.size >= 4:
-            it_hosts = iter_iprange(
-                IPAddress(first_usable_address, self._module.version),
-                IPAddress(last_usable_address, self._module.version),
-            )
+            # Common logic, first IP is always reserved.
+            first_usable_address = self.first + 1
+            if self._module.version == 4:
+                # IPv4 logic, last address is reserved for broadcast.
+                last_usable_address = self.last - 1
+            else:
+                # IPv6 logic, no broadcast address reserved.
+                last_usable_address = self.last
+            return (first_usable_address, last_usable_address)
         else:
-            it_hosts = iter_iprange(
-                IPAddress(self.first, self._module.version),
-                IPAddress(self.last, self._module.version),
-            )
-
-        return it_hosts
+            # If subnet has a size of less than 4, then it is a /31, /32, /127 or /128.
+            # Handle them as per RFC 3021 (IPv4) or RFC 6164 (IPv6), and don't reserve
+            # first or last IP address.
+            return (self.first, self.last)
 
     def __str__(self):
         """:return: this IPNetwork in CIDR format"""
